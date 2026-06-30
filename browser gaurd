@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Browser Guard</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #09101a;
+      --surface: #121b29;
+      --surface-strong: #1b2637;
+      --accent: #6fd9ff;
+      --accent-strong: #2cc7ff;
+      --text: #e6edf9;
+      --text-muted: #8aa0b8;
+      --success: #4dd18c;
+      --warning: #ffb545;
+      --danger: #ff7b7b;
+      --border: rgba(120, 156, 199, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, system-ui, sans-serif;
+      background: radial-gradient(circle at top left, rgba(111, 217, 255, 0.16), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(44, 199, 255, 0.12), transparent 30%),
+        var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 420px;
+      margin: 20px auto;
+      padding: 24px;
+      background: rgba(18, 27, 41, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.28);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .title-group {
+      display: grid;
+      gap: 6px;
+    }
+
+    .title-group h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      letter-spacing: -0.02em;
+    }
+
+    .title-group p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.93rem;
+    }
+
+    .toggle-switch {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 32px;
+      background: rgba(111, 217, 255, 0.16);
+      border-radius: 999px;
+      padding: 4px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .toggle-knob {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #ddf8ff, #86deff);
+      box-shadow: 0 10px 18px rgba(0, 0, 0, 0.18);
+      transition: transform 0.25s ease;
+    }
+
+    .toggle-switch.off .toggle-knob {
+      transform: translateX(24px);
+      background: linear-gradient(180deg, #5c7fa1, #2d455c);
+    }
+
+    .section {
+      margin-top: 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 22px;
+      padding: 18px;
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      transition: transform 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+    }
+
+    .card strong {
+      font-size: 1.65rem;
+      line-height: 1;
+    }
+
+    .card span {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+    }
+
+    .card.small {
+      padding: 16px;
+    }
+
+    .chart {
+      position: relative;
+      width: 100%;
+      height: 128px;
+      background: radial-gradient(circle at top, rgba(44, 199, 255, 0.08), transparent 45%),
+        rgba(255, 255, 255, 0.02);
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .chart::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.16));
+      pointer-events: none;
+    }
+
+    .chart-bars {
+      display: flex;
+      align-items: flex-end;
+      height: 100%;
+      padding: 18px 14px 14px;
+      gap: 10px;
+      z-index: 1;
+      position: relative;
+    }
+
+    .bar {
+      flex: 1;
+      border-radius: 999px 999px 0 0;
+      background: linear-gradient(180deg, rgba(111, 217, 255, 0.9), rgba(44, 199, 255, 0.22));
+      min-height: 18%;
+      transition: height 0.4s ease;
+    }
+
+    .log-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 12px;
+    }
+
+    .log-entry {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 18px;
+    }
+
+    .log-entry .meta {
+      display: grid;
+      gap: 6px;
+    }
+
+    .log-entry .meta strong {
+      font-size: 0.98rem;
+    }
+
+    .log-entry .type {
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(111, 217, 255, 0.09);
+    }
+
+    .log-entry .type.malware {
+      background: rgba(255, 123, 123, 0.12);
+      color: #ffb5b5;
+    }
+
+    .log-entry .type.tracker {
+      background: rgba(111, 217, 255, 0.14);
+      color: #b8ebff;
+    }
+
+    .log-entry .type.phishing {
+      background: rgba(255, 181, 69, 0.15);
+      color: #ffd9a8;
+    }
+
+    .footer {
+      margin-top: 24px;
+      font-size: 0.93rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 12px rgba(77, 209, 140, 0.45);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="title-group">
+        <h1>Browser Guard</h1>
+        <p>Dark mode protection against trackers, malware, and phishing.</p>
+      </div>
+      <div id="toggle" class="toggle-switch" role="button" aria-pressed="true">
+        <span class="toggle-knob"></span>
+      </div>
+    </header>
+
+    <div class="section">
+      <div class="stats-grid">
+        <div class="card">
+          <span>Total Blocks</span>
+          <strong id="total-blocks">0</strong>
+        </div>
+        <div class="card">
+          <span>Active Protection</span>
+          <strong id="status-label">Enabled</strong>
+        </div>
+        <div class="card">
+          <span>Trackers blocked</span>
+          <strong id="tracker-count">0</strong>
+        </div>
+        <div class="card">
+          <span>Phishing attempts</span>
+          <strong id="phishing-count">0</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="card">
+        <span>Blocked events by type</span>
+        <div class="chart">
+          <div class="chart-bars">
+            <div class="bar" id="bar-trackers" style="height: 52%"></div>
+            <div class="bar" id="bar-malware" style="height: 38%"></div>
+            <div class="bar" id="bar-phishing" style="height: 26%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="card">
+        <span>Recent blocks</span>
+        <ul class="log-list" id="log-list">
+          <li class="log-entry">
+            <div class="meta">
+              <strong>Tracker blocked on news-site.com</strong>
+              <span>Request to ad-network prevented</span>
+            </div>
+            <span class="type tracker">Tracker</span>
+          </li>
+          <li class="log-entry">
+            <div class="meta">
+              <strong>Phishing page blocked</strong>
+              <span>Login impersonation attempt stopped</span>
+            </div>
+            <span class="type phishing">Phishing</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>
+        <span class="status-dot" id="status-dot"></span>
+        Protection is active
+      </div>
+      <div>Malware defense, tracker shield, phishing guard</div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      enabled: true,
+      tracker: 36,
+      phishing: 8,
+      malware: 12,
+      logs: [
+        { title: 'Tracker blocked on news-site.com', detail: 'Request to ad-network prevented', type: 'tracker' },
+        { title: 'Phishing page blocked', detail: 'Login impersonation attempt stopped', type: 'phishing' },
+        { title: 'Malware domain blocked', detail: 'Malicious payload request prevented', type: 'malware' }
+      ]
+    };
+
+    const totalBlocksEl = document.getElementById('total-blocks');
+    const trackerCountEl = document.getElementById('tracker-count');
+    const phishingCountEl = document.getElementById('phishing-count');
+    const statusLabelEl = document.getElementById('status-label');
+    const statusDotEl = document.getElementById('status-dot');
+    const toggleEl = document.getElementById('toggle');
+    const logListEl = document.getElementById('log-list');
+    const barTrackers = document.getElementById('bar-trackers');
+    const barMalware = document.getElementById('bar-malware');
+    const barPhishing = document.getElementById('bar-phishing');
+
+    function updateStats() {
+      const total = state.tracker + state.phishing + state.malware;
+      totalBlocksEl.textContent = total;
+      trackerCountEl.textContent = state.tracker;
+      phishingCountEl.textContent = state.phishing;
+      statusLabelEl.textContent = state.enabled ? 'Enabled' : 'Paused';
+      statusDotEl.style.background = state.enabled ? 'var(--success)' : 'var(--warning)';
+      statusDotEl.style.boxShadow = state.enabled ? '0 0 12px rgba(77, 209, 140, 0.45)' : '0 0 12px rgba(255, 181, 69, 0.35)';
+      toggleEl.classList.toggle('off', !state.enabled);
+      toggleEl.setAttribute('aria-pressed', state.enabled ? 'true' : 'false');
+
+      const maxValue = Math.max(state.tracker, state.malware, state.phishing, 1);
+      barTrackers.style.height = `${Math.round((state.tracker / maxValue) * 100)}%`;
+      barMalware.style.height = `${Math.round((state.malware / maxValue) * 100)}%`;
+      barPhishing.style.height = `${Math.round((state.phishing / maxValue) * 100)}%`;
+    }
+
+    function renderLogs() {
+      logListEl.innerHTML = '';
+      state.logs.slice(0, 5).forEach((entry) => {
+        const item = document.createElement('li');
+        item.className = 'log-entry';
+        item.innerHTML = `
+          <div class="meta">
+            <strong>${entry.title}</strong>
+            <span>${entry.detail}</span>
+          </div>
+          <span class="type ${entry.type}">${entry.type.charAt(0).toUpperCase() + entry.type.slice(1)}</span>
+        `;
+        logListEl.appendChild(item);
+      });
+    }
+
+    function simulateBlock() {
+      const types = ['tracker', 'malware', 'phishing'];
+      const type = types[Math.floor(Math.random() * types.length)];
+      state[type] += 1;
+      const now = new Date();
+      state.logs.unshift({
+        title: `${type.charAt(0).toUpperCase() + type.slice(1)} blocked on example-site.com`,
+        detail: 'Threat stopped before it reached your device',
+        type
+      });
+      if (state.logs.length > 6) state.logs.pop();
+      updateStats();
+      renderLogs();
+    }
+
+    toggleEl.addEventListener('click', () => {
+      state.enabled = !state.enabled;
+      updateStats();
+      statusLabelEl.textContent = state.enabled ? 'Enabled' : 'Paused';
+    });
+
+    updateStats();
+    renderLogs();
+    setInterval(() => {
+      if (state.enabled) simulateBlock();
+    }, 7000);
+  </script>
+</body>
+</html>
